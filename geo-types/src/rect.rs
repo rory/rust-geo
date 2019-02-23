@@ -24,10 +24,13 @@ impl<T: CoordinateType> Rect<T> {
             max: max.into(),
         }
     }
+
+    /// Width of this Rect
     pub fn width(self) -> T {
         self.max.x - self.min.x
     }
 
+    /// Height of this Rect
     pub fn height(self) -> T {
         self.max.y - self.min.y
     }
