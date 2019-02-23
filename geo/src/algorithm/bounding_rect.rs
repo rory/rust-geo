@@ -1,6 +1,6 @@
 use crate::{
-    Coordinate, CoordinateType, Line, LineString, MultiLineString, MultiPoint, MultiPolygon,
-    Polygon, Rect, Triangle,
+    Coordinate, CoordinateType, Geometry, GeometryCollection, Line, LineString, MultiLineString,
+    MultiPoint, MultiPolygon, Point, Polygon, Rect, Triangle,
 };
 use geo_types::private_utils::{get_bounding_rect, line_string_bounding_rect};
 
@@ -30,6 +30,20 @@ pub trait BoundingRect<T: CoordinateType> {
     /// ```
     ///
     fn bounding_rect(&self) -> Self::Output;
+}
+
+impl<T> BoundingRect<T> for Point<T>
+where
+    T: CoordinateType,
+{
+    type Output = Rect<T>;
+
+    fn bounding_rect(&self) -> Self::Output {
+        Rect {
+            min: self.0.clone(),
+            max: self.0.clone(),
+        }
+    }
 }
 
 impl<T> BoundingRect<T> for MultiPoint<T>
