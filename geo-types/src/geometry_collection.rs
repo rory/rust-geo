@@ -26,6 +26,11 @@ impl<T: CoordinateType> GeometryCollection<T> {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Add this Geometry to this GeometryCollection
+    pub fn push(&mut self, g: impl Into<Geometry<T>>) {
+        self.0.push(g.into());
+    }
 }
 
 /// Convert any Geometry (or anything that can be converted to a Geometry) into a
