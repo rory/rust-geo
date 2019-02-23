@@ -150,8 +150,52 @@ where
     }
 }
 
+impl<T> BoundingRect<T> for Geometry<T>
+where
+    T: CoordinateType,
+{
+    type Output = Option<Rect<T>>;
+
+    fn bounding_rect(&self) -> Self::Output {
+        match self {
+            Geometry::Point(p) => Some(p.bounding_rect()),
+            Geometry::Line(l) => Some(l.bounding_rect()),
+            Geometry::LineString(ls) => ls.bounding_rect(),
+            Geometry::Polygon(p) => p.bounding_rect(),
+            Geometry::MultiPoint(mp) => mp.bounding_rect(),
+            Geometry::MultiLineString(mls) => mls.bounding_rect(),
+            Geometry::MultiPolygon(mp) => mp.bounding_rect(),
+            Geometry::GeometryCollection(gc) => gc.bounding_rect(),
+        }
+    }
+}
+
+impl<T> BoundingRect<T> for GeometryCollection<T>
+where
+    T: CoordinateType,
+{
+    type Output = Option<Rect<T>>;
+
+    fn bounding_rect(&self) -> Self::Output {
+        // Calculate all bounding rects for all objects
+        let mut all_bboxes = self
+            .0
+            .iter()
+            .filter_map(|g| g.bounding_rect())
+            .collect::<Vec<Rect<T>>>();
+
+        let bbox = all_bboxes.pop();
+        bbox.map(|bbox| {
+            all_bboxes
+                .iter()
+                .fold(bbox, |acc, item| acc.combined(&item))
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::algorithm::bounding_rect::BoundingRect;
     use crate::{
         Coordinate, Line, LineString, MultiLineString, MultiPoint, MultiPolygon, Polygon, Rect,
@@ -258,5 +302,40 @@ mod test {
                 max: Coordinate { x: 2., y: 3. },
             }
         );
+    }
+
+    #[test]
+    fn geometry() {
+        let empty: Vec<Point<f64>> = vec![];
+        assert_eq!(
+            Geometry::MultiPoint(MultiPoint(empty.clone())).bounding_rect(),
+            None
+        );
+        assert_eq!(
+            Geometry::MultiPoint(MultiPoint(vec![Point::new(0., 0.)])).bounding_rect(),
+            Some(Rect::new((0., 0.), (0., 0.)))
+        );
+        assert_eq!(
+            Geometry::MultiPoint(MultiPoint(vec![(0., 0.).into(), (1., 1.).into()]))
+                .bounding_rect(),
+            Some(Rect::new((0., 0.), (1., 1.)))
+        );
+        assert_eq!(
+            Geometry::Point(Point::new(5., 5.)).bounding_rect(),
+            Some(Rect::new((5., 5.), (5., 5.)))
+        );
+    }
+
+    #[test]
+    fn geometry_collection() {
+        let mut gc = GeometryCollection::new();
+        gc.push(MultiPoint(vec![]));
+        assert_eq!(gc.bounding_rect(), None);
+
+        gc.push(Point::new(5., 5.));
+        assert_eq!(gc.bounding_rect(), Some(Rect::new((5., 5.), (5., 5.))));
+
+        gc.push(MultiPoint(vec![(0., 0.).into(), (1., 1.).into()]));
+        assert_eq!(gc.bounding_rect(), Some(Rect::new((0., 0.), (5., 5.))));
     }
 }
