@@ -12,6 +12,18 @@ where
 }
 
 impl<T: CoordinateType> Rect<T> {
+    /// Create a new `Rect` with this `min` & `max` point
+    ///
+    /// ```
+    /// # use geo_types::Rect;
+    /// let r = Rect::new((0., 0.), (10., 10.));
+    /// ```
+    pub fn new(min: impl Into<Coordinate<T>>, max: impl Into<Coordinate<T>>) -> Self {
+        Rect {
+            min: min.into(),
+            max: max.into(),
+        }
+    }
     pub fn width(self) -> T {
         self.max.x - self.min.x
     }
