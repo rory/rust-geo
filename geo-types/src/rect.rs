@@ -34,4 +34,49 @@ impl<T: CoordinateType> Rect<T> {
     pub fn height(self) -> T {
         self.max.y - self.min.y
     }
+
+    /// Return a new Rect which covers both `self` and `other`
+    ///
+    /// It's possible that the returned Rect will include points not covered by either of the
+    /// original Rects.
+    ///
+    /// ```
+    /// # use geo_types::Rect;
+    /// let r1 = Rect::new((0, 0), (10, 10));
+    /// // `other` overlaps the Rect, no change
+    /// assert_eq!(r1.combined(&Rect::new((1, 1), (5, 5))), r1);
+    /// // Here a larger Rect is returned
+    /// assert_eq!(r1.combined(&Rect::new((1, 1), (50, 50))), Rect::new((0, 0), (50, 50)));
+    /// assert_eq!(r1.combined(&Rect::new((5, 1), (15, 2))), Rect::new((0, 0), (15, 10)));
+    /// ```
+    pub fn combined(&self, other: &Rect<T>) -> Rect<T> {
+        Rect {
+            min: Coordinate {
+                x: simple_min(self.min.x, other.min.x),
+                y: simple_min(self.min.y, other.min.y),
+            },
+            max: Coordinate {
+                x: simple_max(self.max.x, other.max.x),
+                y: simple_max(self.max.y, other.max.y),
+            },
+        }
+    }
+}
+
+/// Can't use std::cmp::min on Float etc.
+fn simple_min<T: CoordinateType>(a: T, b: T) -> T {
+    if a <= b {
+        a
+    } else {
+        b
+    }
+}
+
+/// Can't use std::cmp::max on Float etc.
+fn simple_max<T: CoordinateType>(a: T, b: T) -> T {
+    if a >= b {
+        a
+    } else {
+        b
+    }
 }
